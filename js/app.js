@@ -1,79 +1,93 @@
 // ============================================================
 //  DIVAS DA COMPOSTAGEM — Gestão Financeira
-//  Dados salvos no localStorage do navegador
+//  Banco de dados: Firebase Firestore (nuvem, gratuito)
 // ============================================================
 
-const STORAGE_KEY = 'divas_financeiro_v1';
+const COLECAO = 'transacoes';
 
 // Estado global
-let transacoes = [];
+let transacoes  = [];
 let editandoId  = null;
 let deletandoId = null;
-let filtros = { mes: '', tipo: '', busca: '' };
+let filtros     = { mes: '', tipo: '', busca: '' };
 
 // ============================================================
-// PERSISTÊNCIA (localStorage)
+// LOADING
 // ============================================================
 
-function carregarDados() {
-    try {
-        const salvo = localStorage.getItem(STORAGE_KEY);
-        transacoes = salvo ? JSON.parse(salvo) : [];
-    } catch (_) {
-        transacoes = [];
-    }
-}
+function mostrarLoading()  { document.getElementById('loadingOverlay').style.display = 'flex'; }
+function ocultarLoading()  { document.getElementById('loadingOverlay').style.display = 'none'; }
 
-function salvarDados() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(transacoes));
+// ============================================================
+// LISTENER EM TEMPO REAL (READ)
+// Atualiza a tela automaticamente sempre que o banco muda
+// ============================================================
+
+function iniciarListener() {
+    mostrarLoading();
+
+    db.collection(COLECAO)
+      .orderBy('numero', 'asc')
+      .onSnapshot(
+        snapshot => {
+            transacoes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            ocultarLoading();
+            renderizar();
+        },
+        erro => {
+            ocultarLoading();
+            console.error('Erro Firestore:', erro);
+            mostrarToast('Erro ao conectar com o banco de dados. Verifique o firebase-config.js', 'error');
+        }
+      );
 }
 
 // ============================================================
-// CRUD
+// CREATE — Adicionar transação
 // ============================================================
 
-function gerarId() {
-    return 'tx_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7);
-}
-
-function proximoNumero() {
-    if (transacoes.length === 0) return 1;
-    return Math.max(...transacoes.map(t => t.numero || 0)) + 1;
-}
-
-function adicionar(dados) {
+async function adicionar(dados) {
+    const numero = proximoNumero();
     const nova = {
-        id:        gerarId(),
-        numero:    proximoNumero(),
+        numero,
         descricao: dados.descricao.trim(),
         tipo:      dados.tipo,
         mes:       dados.mes,
         valor:     parseFloat(dados.valor),
-        criado:    new Date().toISOString()
+        criado:    firebase.firestore.FieldValue.serverTimestamp()
     };
-    transacoes.push(nova);
-    salvarDados();
-    return nova;
+    await db.collection(COLECAO).add(nova);
 }
 
-function atualizar(id, dados) {
-    const idx = transacoes.findIndex(t => t.id === id);
-    if (idx !== -1) {
-        transacoes[idx] = {
-            ...transacoes[idx],
-            descricao:   dados.descricao.trim(),
-            tipo:        dados.tipo,
-            mes:         dados.mes,
-            valor:       parseFloat(dados.valor),
-            atualizado:  new Date().toISOString()
-        };
-        salvarDados();
-    }
+// ============================================================
+// UPDATE — Editar transação
+// ============================================================
+
+async function atualizar(id, dados) {
+    await db.collection(COLECAO).doc(id).update({
+        descricao:   dados.descricao.trim(),
+        tipo:        dados.tipo,
+        mes:         dados.mes,
+        valor:       parseFloat(dados.valor),
+        atualizado:  firebase.firestore.FieldValue.serverTimestamp()
+    });
 }
 
-function remover(id) {
-    transacoes = transacoes.filter(t => t.id !== id);
-    salvarDados();
+// ============================================================
+// DELETE — Excluir transação
+// ============================================================
+
+async function remover(id) {
+    await db.collection(COLECAO).doc(id).delete();
+}
+
+// ============================================================
+// AUXILIAR — Próximo número sequencial
+// ============================================================
+
+function proximoNumero() {
+    if (transacoes.length === 0) return 1;
+    return Math.max(...transacoes.map(t => t.numero || 0)) + 1;
 }
 
 // ============================================================
@@ -82,8 +96,8 @@ function remover(id) {
 
 function obterFiltradas() {
     return transacoes.filter(t => {
-        if (filtros.mes  && t.mes  !== filtros.mes)                                         return false;
-        if (filtros.tipo && t.tipo !== filtros.tipo)                                        return false;
+        if (filtros.mes  && t.mes  !== filtros.mes)  return false;
+        if (filtros.tipo && t.tipo !== filtros.tipo) return false;
         if (filtros.busca && !t.descricao.toLowerCase().includes(filtros.busca.toLowerCase())) return false;
         return true;
     });
@@ -115,15 +129,15 @@ function escaparHtml(texto) {
 
 function renderizar() {
     const filtradas   = obterFiltradas();
-    const totaisGeral = calcularTotais(transacoes);   // saldo do header = sempre total geral
-    const totaisFilt  = calcularTotais(filtradas);    // cards = conforme filtro
+    const totaisGeral = calcularTotais(transacoes);
+    const totaisFilt  = calcularTotais(filtradas);
 
-    // Header saldo (sempre total)
+    // Saldo no header (sempre total geral)
     const headerSaldo = document.getElementById('headerBalance');
     headerSaldo.textContent = formatBRL(totaisGeral.saldo);
     headerSaldo.style.color = totaisGeral.saldo >= 0 ? '#fff' : '#FFCDD2';
 
-    // Cards
+    // Cards (conforme filtro ativo)
     document.getElementById('totalEntradas').textContent = formatBRL(totaisFilt.entradas);
     document.getElementById('totalSaidas').textContent   = formatBRL(totaisFilt.saidas);
     document.getElementById('totalSaldo').textContent    = formatBRL(totaisFilt.saldo);
@@ -147,8 +161,8 @@ function renderizar() {
             : `${n} de ${total} transaç${total === 1 ? 'ão' : 'ões'} (filtrado)`;
 
     // Tabela
-    const tbody    = document.getElementById('transactionsBody');
-    const emptySt  = document.getElementById('emptyState');
+    const tbody   = document.getElementById('transactionsBody');
+    const emptySt = document.getElementById('emptyState');
 
     if (filtradas.length === 0) {
         tbody.innerHTML = '';
@@ -157,9 +171,7 @@ function renderizar() {
     }
     emptySt.style.display = 'none';
 
-    const ordenadas = [...filtradas].sort((a, b) => (a.numero || 0) - (b.numero || 0));
-
-    tbody.innerHTML = ordenadas.map(t => `
+    tbody.innerHTML = filtradas.map(t => `
         <tr>
             <td class="num-col">${t.numero}</td>
             <td class="descricao-col">${escaparHtml(t.descricao)}</td>
@@ -225,10 +237,10 @@ function closeModalOnOverlay(e) {
 }
 
 // ============================================================
-// SALVAR TRANSAÇÃO (submit do form)
+// SALVAR (CREATE ou UPDATE)
 // ============================================================
 
-function saveTransaction(e) {
+async function saveTransaction(e) {
     e.preventDefault();
 
     const dados = {
@@ -243,20 +255,30 @@ function saveTransaction(e) {
         return;
     }
 
-    if (editandoId) {
-        atualizar(editandoId, dados);
-        mostrarToast('Transação atualizada com sucesso!', 'success');
-    } else {
-        adicionar(dados);
-        mostrarToast('Transação adicionada com sucesso!', 'success');
-    }
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
 
-    closeModal();
-    renderizar();
+    try {
+        if (editandoId) {
+            await atualizar(editandoId, dados);
+            mostrarToast('Transação atualizada com sucesso!', 'success');
+        } else {
+            await adicionar(dados);
+            mostrarToast('Transação adicionada com sucesso!', 'success');
+        }
+        closeModal();
+    } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao salvar. Tente novamente.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-save"></i> Salvar';
+    }
 }
 
 // ============================================================
-// EXCLUIR TRANSAÇÃO
+// DELETE
 // ============================================================
 
 function confirmarExclusao(id) {
@@ -269,12 +291,21 @@ function closeDeleteModal() {
     document.getElementById('deleteOverlay').classList.remove('active');
 }
 
-document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-    if (deletandoId) {
-        remover(deletandoId);
+document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
+    if (!deletandoId) return;
+    const btn = document.getElementById('confirmDeleteBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Excluindo...';
+    try {
+        await remover(deletandoId);
         closeDeleteModal();
-        renderizar();
         mostrarToast('Transação excluída.', 'info');
+    } catch (err) {
+        console.error(err);
+        mostrarToast('Erro ao excluir. Tente novamente.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-trash"></i> Excluir';
     }
 });
 
@@ -308,19 +339,15 @@ function exportCSV() {
         return;
     }
 
-    const linhas = lista
-        .sort((a, b) => (a.numero || 0) - (b.numero || 0))
-        .map(t => [
-            t.numero,
-            `"${t.descricao.replace(/"/g, '""')}"`,
-            t.tipo,
-            t.mes,
-            t.valor.toFixed(2).replace('.', ',')
-        ].join(';'));
+    const linhas = lista.map(t => [
+        t.numero,
+        `"${t.descricao.replace(/"/g, '""')}"`,
+        t.tipo,
+        t.mes,
+        t.valor.toFixed(2).replace('.', ',')
+    ].join(';'));
 
-    const cabecalho = 'Nº;Descrição;Tipo;Mês;Valor (R$)';
-    const csv = '﻿' + [cabecalho, ...linhas].join('\r\n');
-
+    const csv  = '﻿Nº;Descrição;Tipo;Mês;Valor (R$)\r\n' + linhas.join('\r\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -330,7 +357,6 @@ function exportCSV() {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-
     mostrarToast(`${lista.length} registros exportados!`, 'success');
 }
 
@@ -352,19 +378,12 @@ function mostrarToast(msg, tipo = 'success') {
 // ============================================================
 
 document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-        closeModal();
-        closeDeleteModal();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
-        e.preventDefault();
-        openModal();
-    }
+    if (e.key === 'Escape') { closeModal(); closeDeleteModal(); }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') { e.preventDefault(); openModal(); }
 });
 
 // ============================================================
-// INICIALIZAÇÃO
+// INICIAR
 // ============================================================
 
-carregarDados();
-renderizar();
+iniciarListener();
