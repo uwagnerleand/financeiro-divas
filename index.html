@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divas da Compostagem - Gestão Financeira</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <div class="logo-icon">🌱</div>
+                <div class="logo-text">
+                    <h1>Divas da Compostagem</h1>
+                    <p>Controle de Entrada e Saída</p>
+                </div>
+            </div>
+            <div class="header-balance">
+                <div class="balance-icon">🐷</div>
+                <div class="balance-info">
+                    <span class="balance-label">SALDO EM CAIXA</span>
+                    <span class="balance-value" id="headerBalance">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN -->
+    <main class="main-container">
+
+        <!-- Cards de Resumo -->
+        <section class="summary-section">
+            <div class="summary-card entrada-card">
+                <div class="card-icon"><i class="fas fa-arrow-up"></i></div>
+                <div class="card-info">
+                    <h3>Total Entradas</h3>
+                    <p id="totalEntradas">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="summary-card saida-card">
+                <div class="card-icon"><i class="fas fa-arrow-down"></i></div>
+                <div class="card-info">
+                    <h3>Total Saídas</h3>
+                    <p id="totalSaidas">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="summary-card saldo-card">
+                <div class="card-icon"><i class="fas fa-wallet"></i></div>
+                <div class="card-info">
+                    <h3>Saldo do Período</h3>
+                    <p id="totalSaldo">R$ 0,00</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filtros e Ações -->
+        <section class="controls-section">
+            <div class="filters">
+                <div class="filter-group">
+                    <label><i class="fas fa-search"></i></label>
+                    <input type="text" id="searchInput" placeholder="Buscar descrição..." class="filter-input">
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-calendar-alt"></i></label>
+                    <select id="mesFilter" class="filter-select">
+                        <option value="">Todos os meses</option>
+                        <option>JANEIRO</option><option>FEVEREIRO</option><option>MARÇO</option>
+                        <option>ABRIL</option><option>MAIO</option><option>JUNHO</option>
+                        <option>JULHO</option><option>AGOSTO</option><option>SETEMBRO</option>
+                        <option>OUTUBRO</option><option>NOVEMBRO</option><option>DEZEMBRO</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label><i class="fas fa-filter"></i></label>
+                    <select id="tipoFilter" class="filter-select">
+                        <option value="">Todos os tipos</option>
+                        <option value="ENTRADA">ENTRADA</option>
+                        <option value="SAÍDA">SAÍDA</option>
+                    </select>
+                </div>
+            </div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="openModal()">
+                    <i class="fas fa-plus"></i> Nova Transação
+                </button>
+                <button class="btn btn-secondary" onclick="exportCSV()">
+                    <i class="fas fa-file-csv"></i> Exportar CSV
+                </button>
+            </div>
+        </section>
+
+        <!-- Tabela de Transações -->
+        <section class="table-section">
+            <div class="table-header-bar">
+                <span id="countLabel">0 transações</span>
+            </div>
+            <div class="table-wrapper">
+                <table class="transactions-table">
+                    <thead>
+                        <tr>
+                            <th style="width:60px">Nº</th>
+                            <th>Descrição</th>
+                            <th style="width:120px">Tipo</th>
+                            <th style="width:130px">Mês</th>
+                            <th style="width:140px">Valor</th>
+                            <th style="width:100px">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionsBody"></tbody>
+                </table>
+                <div class="empty-state" id="emptyState" style="display:none">
+                    <div class="empty-icon">📊</div>
+                    <p>Nenhuma transação encontrada.</p>
+                    <button class="btn btn-primary" onclick="openModal()">
+                        <i class="fas fa-plus"></i> Adicionar primeira transação
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL: Nova / Editar Transação -->
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModalOnOverlay(event)">
+        <div class="modal">
+            <div class="modal-header">
+                <h2 id="modalTitle">Nova Transação</h2>
+                <button class="modal-close" onclick="closeModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="transactionForm" onsubmit="saveTransaction(event)">
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="descricao">Descrição *</label>
+                        <input type="text" id="descricao" placeholder="Ex: Venda de composto, Compra de materiais..." required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tipo">Tipo *</label>
+                            <select id="tipo" required>
+                                <option value="">Selecione...</option>
+                                <option value="ENTRADA">ENTRADA</option>
+                                <option value="SAÍDA">SAÍDA</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mes">Mês *</label>
+                            <select id="mes" required>
+                                <option value="">Selecione...</option>
+                                <option>JANEIRO</option><option>FEVEREIRO</option><option>MARÇO</option>
+                                <option>ABRIL</option><option>MAIO</option><option>JUNHO</option>
+                                <option>JULHO</option><option>AGOSTO</option><option>SETEMBRO</option>
+                                <option>OUTUBRO</option><option>NOVEMBRO</option><option>DEZEMBRO</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="valor">Valor (R$) *</label>
+                        <div class="input-prefix-group">
+                            <span class="input-prefix">R$</span>
+                            <input type="number" id="valor" placeholder="0,00" step="0.01" min="0.01" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-cancel" onclick="closeModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" id="saveBtn">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: Confirmar Exclusão -->
+    <div class="modal-overlay" id="deleteOverlay">
+        <div class="modal modal-small">
+            <div class="modal-header">
+                <h2><i class="fas fa-exclamation-triangle" style="color:#E74C3C;margin-right:8px"></i>Confirmar Exclusão</h2>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir esta transação?<br>
+                <strong>Esta ação não pode ser desfeita.</strong></p>
+            </div>
+            <div class="form-actions" style="padding: 0 25px 25px;">
+                <button class="btn btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Excluir
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
