@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divas da Compostagem - Dashboard</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <div class="logo-icon">🌱</div>
+                <div class="logo-text">
+                    <h1>Divas da Compostagem</h1>
+                    <p>Dashboard Financeiro</p>
+                </div>
+            </div>
+            <div class="header-balance">
+                <div class="balance-icon">🐷</div>
+                <div class="balance-info">
+                    <span class="balance-label">SALDO EM CAIXA</span>
+                    <span class="balance-value" id="headerBalance">R$ 0,00</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- NAV TABS -->
+    <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab">
+            <i class="fas fa-exchange-alt"></i> Transações
+        </a>
+        <a href="dashboard.html" class="nav-tab active">
+            <i class="fas fa-chart-line"></i> Dashboard
+        </a>
+    </nav>
+
+    <!-- MAIN -->
+    <main class="main-container">
+
+        <!-- Cards de Resumo -->
+        <section class="summary-section summary-section-4">
+            <div class="summary-card entrada-card">
+                <div class="card-icon"><i class="fas fa-arrow-up"></i></div>
+                <div class="card-info">
+                    <h3>Total Entradas</h3>
+                    <p id="totalEntradas">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="summary-card saida-card">
+                <div class="card-icon"><i class="fas fa-arrow-down"></i></div>
+                <div class="card-info">
+                    <h3>Total Saídas</h3>
+                    <p id="totalSaidas">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="summary-card saldo-card">
+                <div class="card-icon"><i class="fas fa-wallet"></i></div>
+                <div class="card-info">
+                    <h3>Saldo em Caixa</h3>
+                    <p id="totalSaldo">R$ 0,00</p>
+                </div>
+            </div>
+            <div class="summary-card info-card">
+                <div class="card-icon"><i class="fas fa-list-ol"></i></div>
+                <div class="card-info">
+                    <h3>Total de Lançamentos</h3>
+                    <p id="totalLancamentos">0</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Linha 1: Barras + Rosca -->
+        <section class="dashboard-section">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <i class="fas fa-chart-bar"></i>
+                    <h3>Entradas e Saídas por Mês</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <i class="fas fa-chart-pie"></i>
+                    <h3>Proporção Geral</h3>
+                </div>
+                <div class="chart-container chart-container-doughnut">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+                <div class="doughnut-legend" id="doughnutLegend"></div>
+            </div>
+        </section>
+
+        <!-- Linha 2: Análise Temporal (largura total) -->
+        <section class="dashboard-section-full">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <i class="fas fa-chart-line"></i>
+                    <h3>Análise Temporal — Evolução do Saldo</h3>
+                </div>
+                <div class="chart-container chart-container-line">
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- Linha 3: Resumo por Mês -->
+        <section class="dashboard-section-full">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header">
+                    <i class="fas fa-table"></i>
+                    <h3>Resumo por Mês</h3>
+                </div>
+                <div class="table-wrapper">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Mês</th>
+                                <th>Entradas</th>
+                                <th>Saídas</th>
+                                <th>Saldo do Mês</th>
+                                <th>Saldo Acumulado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resumoMesBody"></tbody>
+                    </table>
+                    <div class="empty-state" id="emptyState" style="display:none">
+                        <div class="empty-icon">📊</div>
+                        <p>Nenhum dado ainda. <a href="index.html">Adicionar transações</a></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Tela de carregamento -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <p>Carregando dados...</p>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
