@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Divas da Compostagem - Importar Dados</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .import-container { max-width: 700px; margin: 40px auto; padding: 0 20px; }
+        .import-card { background: #fff; border-radius: 14px; box-shadow: 0 2px 15px rgba(0,0,0,0.1); overflow: hidden; }
+        .import-card-header { background: linear-gradient(135deg, #FFB800, #E5A200); padding: 22px 28px; }
+        .import-card-header h2 { font-size: 1.2rem; font-weight: 700; color: #2C3E50; margin: 0; }
+        .import-card-header p { font-size: 0.85rem; color: rgba(44,62,80,0.7); margin: 4px 0 0; }
+        .import-card-body { padding: 28px; }
+        .import-info { background: #FFF8E1; border-left: 4px solid #FFB800; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; }
+        .import-info p { font-size: 0.88rem; color: #5D4037; margin: 4px 0; }
+        .import-info strong { color: #2C3E50; }
+        .progress-bar-wrap { background: #ECF0F1; border-radius: 20px; height: 14px; margin: 16px 0 8px; overflow: hidden; display: none; }
+        .progress-bar { height: 100%; background: linear-gradient(135deg, #FFB800, #27AE60); border-radius: 20px; width: 0%; transition: width 0.3s ease; }
+        #progressText { font-size: 0.85rem; color: #7F8C8D; text-align: center; margin-bottom: 16px; display: none; }
+        #logBox { background: #F8F9FA; border: 1px solid #ECF0F1; border-radius: 8px; padding: 14px; max-height: 200px; overflow-y: auto; font-size: 0.8rem; font-family: monospace; color: #2C3E50; display: none; margin-top: 16px; }
+        .btn-import-big { width: 100%; padding: 16px; font-size: 1rem; justify-content: center; border-radius: 10px; }
+        .btn-voltar { display: inline-flex; align-items: center; gap: 8px; color: #7F8C8D; text-decoration: none; font-size: 0.88rem; font-weight: 600; margin-bottom: 20px; }
+        .btn-voltar:hover { color: #2C3E50; }
+        .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        .summary-mini { background: #F8F9FA; border-radius: 10px; padding: 14px; text-align: center; }
+        .summary-mini span { display: block; font-size: 0.75rem; color: #7F8C8D; font-weight: 600; text-transform: uppercase; margin-bottom: 4px; }
+        .summary-mini strong { font-size: 1.1rem; color: #2C3E50; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-logo">
+                <div class="logo-icon">🌱</div>
+                <div class="logo-text">
+                    <h1>Divas da Compostagem</h1>
+                    <p>Importar Dados Históricos</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <nav class="nav-tabs">
+        <a href="index.html" class="nav-tab"><i class="fas fa-exchange-alt"></i> Transações</a>
+        <a href="dashboard.html" class="nav-tab"><i class="fas fa-chart-line"></i> Dashboard</a>
+    </nav>
+
+    <div class="import-container">
+        <a href="index.html" class="btn-voltar">
+            <i class="fas fa-arrow-left"></i> Voltar para Transações
+        </a>
+
+        <div class="import-card">
+            <div class="import-card-header">
+                <h2><i class="fas fa-upload" style="margin-right:8px"></i>Importar Lançamentos 2025</h2>
+                <p>Carrega automaticamente todos os lançamentos históricos do ano 2025</p>
+            </div>
+            <div class="import-card-body">
+
+                <div class="summary-grid">
+                    <div class="summary-mini">
+                        <span>Total de registros</span>
+                        <strong>146</strong>
+                    </div>
+                    <div class="summary-mini">
+                        <span>Entradas</span>
+                        <strong style="color:#27AE60">117</strong>
+                    </div>
+                    <div class="summary-mini">
+                        <span>Saídas</span>
+                        <strong style="color:#E74C3C">29</strong>
+                    </div>
+                </div>
+
+                <div class="import-info">
+                    <p><strong>⚠️ Atenção:</strong> Clique no botão apenas uma vez.</p>
+                    <p>Se os dados já foram importados antes, clique em "Verificar" primeiro para não duplicar.</p>
+                    <p>A descrição será preenchida automaticamente como "Lançamento 2025" — você pode editar depois.</p>
+                </div>
+
+                <div class="progress-bar-wrap" id="progressWrap">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <p id="progressText">Importando...</p>
+
+                <button class="btn btn-primary btn-import-big" id="btnImportar" onclick="iniciarImportacao()">
+                    <i class="fas fa-upload"></i> Importar 146 Lançamentos de 2025
+                </button>
+
+                <div id="logBox"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-box">
+            <div class="loading-spinner"></div>
+            <p>Conectando ao banco...</p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    <script src="js/firebase-config.js"></script>
+    <script src="js/importar.js"></script>
+</body>
+</html>

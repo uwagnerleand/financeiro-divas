@@ -319,6 +319,15 @@ body {
     box-shadow: 0 4px 14px rgba(231,76,60,0.45);
 }
 
+.btn-import {
+    background: linear-gradient(135deg, #8E44AD, #6C3483);
+    color: var(--branco);
+}
+.btn-import:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(142,68,173,0.45);
+}
+
 .btn-icon {
     padding: 7px 10px;
     border-radius: 6px;

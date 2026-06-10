@@ -8,7 +8,7 @@ const COLECAO = 'transacoes';
 let transacoes  = [];
 let editandoId  = null;
 let deletandoId = null;
-let filtros     = { mes: '', tipo: '', busca: '' };
+let filtros     = { mes: '', tipo: '', busca: '', ano: '' };
 
 // ============================================================
 // LOADING
@@ -49,6 +49,7 @@ async function adicionar(dados) {
         descricao: dados.descricao.trim(),
         tipo:      dados.tipo,
         mes:       dados.mes,
+        ano:       parseInt(dados.ano),
         valor:     parseFloat(dados.valor),
         criado:    firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -64,6 +65,7 @@ async function atualizar(id, dados) {
         descricao:  dados.descricao.trim(),
         tipo:       dados.tipo,
         mes:        dados.mes,
+        ano:        parseInt(dados.ano),
         valor:      parseFloat(dados.valor),
         atualizado: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -88,9 +90,10 @@ function proximoNumero() {
 
 function obterFiltradas() {
     return transacoes.filter(t => {
-        if (filtros.mes  && t.mes  !== filtros.mes)  return false;
-        if (filtros.tipo && t.tipo !== filtros.tipo) return false;
-        if (filtros.busca && !t.descricao.toLowerCase().includes(filtros.busca.toLowerCase())) return false;
+        if (filtros.mes  && t.mes  !== filtros.mes)                                              return false;
+        if (filtros.tipo && t.tipo !== filtros.tipo)                                             return false;
+        if (filtros.ano  && String(t.ano) !== String(filtros.ano))                               return false;
+        if (filtros.busca && !t.descricao.toLowerCase().includes(filtros.busca.toLowerCase()))   return false;
         return true;
     });
 }
@@ -163,7 +166,7 @@ function renderizar() {
                     ${t.tipo === 'ENTRADA' ? '▲ ENTRADA' : '▼ SAÍDA'}
                 </span>
             </td>
-            <td><span class="mes-text">${t.mes}</span></td>
+            <td><span class="mes-text">${t.mes}${t.ano ? ' ' + t.ano : ''}</span></td>
             <td class="valor-col ${t.tipo === 'ENTRADA' ? 'valor-entrada' : 'valor-saida'}">
                 ${formatBRL(t.valor)}
             </td>
@@ -202,6 +205,7 @@ function abrirEdicao(id) {
     document.getElementById('descricao').value = t.descricao;
     document.getElementById('tipo').value  = t.tipo;
     document.getElementById('mes').value   = t.mes;
+    document.getElementById('ano').value   = t.ano || 2026;
     document.getElementById('valor').value = t.valor;
     document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save"></i> Atualizar';
     document.getElementById('modalOverlay').classList.add('active');
@@ -237,9 +241,10 @@ async function saveTransaction(e) {
         descricao: document.getElementById('descricao').value,
         tipo:      document.getElementById('tipo').value,
         mes:       document.getElementById('mes').value,
+        ano:       document.getElementById('ano').value,
         valor:     document.getElementById('valor').value
     };
-    if (!dados.descricao || !dados.tipo || !dados.mes || !dados.valor || parseFloat(dados.valor) <= 0) {
+    if (!dados.descricao || !dados.tipo || !dados.mes || !dados.ano || !dados.valor || parseFloat(dados.valor) <= 0) {
         mostrarToast('Preencha todos os campos corretamente.', 'error');
         return;
     }
@@ -286,9 +291,10 @@ document.getElementById('confirmDeleteBtn').addEventListener('click', async () =
 // FILTROS
 // ============================================================
 
-document.getElementById('searchInput').addEventListener('input', e => { filtros.busca = e.target.value; renderizar(); });
-document.getElementById('mesFilter').addEventListener('change',  e => { filtros.mes   = e.target.value; renderizar(); });
-document.getElementById('tipoFilter').addEventListener('change', e => { filtros.tipo  = e.target.value; renderizar(); });
+document.getElementById('searchInput').addEventListener('input',  e => { filtros.busca = e.target.value; renderizar(); });
+document.getElementById('mesFilter').addEventListener('change',   e => { filtros.mes   = e.target.value; renderizar(); });
+document.getElementById('tipoFilter').addEventListener('change',  e => { filtros.tipo  = e.target.value; renderizar(); });
+document.getElementById('anoFilter').addEventListener('change',   e => { filtros.ano   = e.target.value; renderizar(); });
 
 // ============================================================
 // EXPORTAR CSV
