@@ -11,6 +11,14 @@ let editandoId  = null;
 let deletandoId = null;
 let filtros     = { mes: '', tipo: '', busca: '' };
 
+// Instâncias dos gráficos
+let instanciaBar      = null;
+let instanciaDoughnut = null;
+
+const MESES_ABREV = ['JAN','FEV','MAR','ABR','MAI','JUN','JUL','AGO','SET','OUT','NOV','DEZ'];
+const MESES_FULL  = ['JANEIRO','FEVEREIRO','MARÇO','ABRIL','MAIO','JUNHO',
+                     'JULHO','AGOSTO','SETEMBRO','OUTUBRO','NOVEMBRO','DEZEMBRO'];
+
 // ============================================================
 // LOADING
 // ============================================================
@@ -132,6 +140,9 @@ function renderizar() {
     const totaisGeral = calcularTotais(transacoes);
     const totaisFilt  = calcularTotais(filtradas);
 
+    // Atualiza gráficos
+    renderizarGraficos();
+
     // Saldo no header (sempre total geral)
     const headerSaldo = document.getElementById('headerBalance');
     headerSaldo.textContent = formatBRL(totaisGeral.saldo);
@@ -198,6 +209,130 @@ function renderizar() {
             </td>
         </tr>
     `).join('');
+}
+
+// ============================================================
+// GRÁFICOS (Chart.js)
+// ============================================================
+
+function renderizarGraficos() {
+    // Dados por mês (apenas meses que têm algum lançamento)
+    const dadosMeses = MESES_FULL.map((mes, i) => {
+        const doMes   = transacoes.filter(t => t.mes === mes);
+        const entradas = doMes.filter(t => t.tipo === 'ENTRADA').reduce((s, t) => s + t.valor, 0);
+        const saidas   = doMes.filter(t => t.tipo === 'SAÍDA')  .reduce((s, t) => s + t.valor, 0);
+        return { label: MESES_ABREV[i], entradas, saidas };
+    }).filter(d => d.entradas > 0 || d.saidas > 0);
+
+    // Totais gerais para o doughnut
+    const totalEntradas = transacoes.filter(t => t.tipo === 'ENTRADA').reduce((s, t) => s + t.valor, 0);
+    const totalSaidas   = transacoes.filter(t => t.tipo === 'SAÍDA')  .reduce((s, t) => s + t.valor, 0);
+
+    // ── Gráfico de Barras ──────────────────────────────────
+    if (instanciaBar) instanciaBar.destroy();
+
+    const ctxBar = document.getElementById('barChart').getContext('2d');
+    instanciaBar = new Chart(ctxBar, {
+        type: 'bar',
+        data: {
+            labels: dadosMeses.length ? dadosMeses.map(d => d.label) : ['Sem dados'],
+            datasets: [
+                {
+                    label: 'Entradas',
+                    data: dadosMeses.map(d => d.entradas),
+                    backgroundColor: 'rgba(46,204,113,0.75)',
+                    borderColor:     'rgba(39,174,96,1)',
+                    borderWidth: 2,
+                    borderRadius: 6
+                },
+                {
+                    label: 'Saídas',
+                    data: dadosMeses.map(d => d.saidas),
+                    backgroundColor: 'rgba(231,76,60,0.75)',
+                    borderColor:     'rgba(192,57,43,1)',
+                    borderWidth: 2,
+                    borderRadius: 6
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'top', labels: { font: { family: 'Poppins', size: 11 }, boxWidth: 14 } },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ' ' + formatBRL(ctx.raw)
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: v => 'R$ ' + v.toLocaleString('pt-BR'),
+                        font: { family: 'Poppins', size: 10 }
+                    },
+                    grid: { color: 'rgba(0,0,0,0.05)' }
+                },
+                x: {
+                    ticks: { font: { family: 'Poppins', size: 11 } },
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // ── Gráfico Rosca ──────────────────────────────────────
+    if (instanciaDoughnut) instanciaDoughnut.destroy();
+
+    const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+    const semDados    = totalEntradas === 0 && totalSaidas === 0;
+
+    instanciaDoughnut = new Chart(ctxDoughnut, {
+        type: 'doughnut',
+        data: {
+            labels: semDados ? ['Sem dados'] : ['Entradas', 'Saídas'],
+            datasets: [{
+                data:            semDados ? [1] : [totalEntradas, totalSaidas],
+                backgroundColor: semDados ? ['#ECF0F1'] : ['rgba(46,204,113,0.8)', 'rgba(231,76,60,0.8)'],
+                borderColor:     semDados ? ['#ECF0F1'] : ['#27AE60', '#C0392B'],
+                borderWidth: 2,
+                hoverOffset: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '65%',
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => semDados ? '' : ' ' + formatBRL(ctx.raw)
+                    }
+                }
+            }
+        }
+    });
+
+    // Legenda personalizada
+    const total = totalEntradas + totalSaidas;
+    const pctE  = total > 0 ? ((totalEntradas / total) * 100).toFixed(1) : 0;
+    const pctS  = total > 0 ? ((totalSaidas  / total) * 100).toFixed(1) : 0;
+
+    document.getElementById('doughnutLegend').innerHTML = semDados
+        ? '<span style="color:var(--cinza);font-size:0.82rem">Nenhum dado ainda</span>'
+        : `
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#2ECC71"></div>
+                Entradas ${pctE}%
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot" style="background:#E74C3C"></div>
+                Saídas ${pctS}%
+            </div>
+        `;
 }
 
 // ============================================================
