@@ -538,6 +538,44 @@ body {
     .form-actions .btn { width: 100%; justify-content: center; }
 }
 
+/* ===== LOADING OVERLAY ===== */
+.loading-overlay {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,184,0,0.15);
+    backdrop-filter: blur(6px);
+    z-index: 3000;
+    align-items: center;
+    justify-content: center;
+}
+
+.loading-box {
+    background: var(--branco);
+    border-radius: var(--radius);
+    padding: 40px 50px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid var(--cinza-claro);
+    border-top-color: var(--amarelo);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+}
+
+.loading-box p {
+    color: var(--cinza);
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
 @media (max-width: 500px) {
     .header-content { flex-direction: column; text-align: center; }
     .logo-text h1 { font-size: 1.2rem; }
