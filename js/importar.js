@@ -163,44 +163,70 @@ const DADOS_2025 = [
     { tipo: 'ENTRADA', mes: 'DEZEMBRO', valor: 20.00 }
 ];
 
+];
+
 // ============================================================
-// IMPORTAÇÃO
+// DADOS 2026
 // ============================================================
 
-async function iniciarImportacao() {
-    const btn = document.getElementById('btnImportar');
+const DADOS_2026 = [
+    // JANEIRO
+    { tipo: 'SAÍDA',   mes: 'JANEIRO', valor: 56.00 },
+    { tipo: 'ENTRADA', mes: 'JANEIRO', valor: 174.00 },
+    // MARÇO
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 42.00 },
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 20.00 },
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 25.00 },
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 65.00 },
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 15.00 },
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 25.00 },
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 5.00 },
+    { tipo: 'ENTRADA', mes: 'MARÇO', valor: 70.00 },
+    // ABRIL
+    { tipo: 'ENTRADA', mes: 'ABRIL', valor: 50.00 },
+    { tipo: 'SAÍDA',   mes: 'ABRIL', valor: 73.00 },
+    { tipo: 'ENTRADA', mes: 'ABRIL', valor: 50.00 },
+    { tipo: 'ENTRADA', mes: 'ABRIL', valor: 70.00 },
+    { tipo: 'SAÍDA',   mes: 'ABRIL', valor: 28.00 },
+    { tipo: 'SAÍDA',   mes: 'ABRIL', valor: 36.00 },
+    { tipo: 'ENTRADA', mes: 'ABRIL', valor: 5.00 },
+    { tipo: 'ENTRADA', mes: 'ABRIL', valor: 10.00 }
+];
+
+// ============================================================
+// IMPORTAÇÃO UNIFICADA
+// ============================================================
+
+async function iniciarImportacao(ano) {
+    const dados = ano === 2025 ? DADOS_2025 : DADOS_2026;
+
+    const btn         = document.getElementById(`btnImportar${ano}`);
+    const progressWrap = document.getElementById(`progressWrap${ano}`);
+    const progressBar  = document.getElementById(`progressBar${ano}`);
+    const progressText = document.getElementById(`progressText${ano}`);
+    const logBox       = document.getElementById(`logBox${ano}`);
+
     btn.disabled = true;
     btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Importando...';
-
-    const progressWrap = document.getElementById('progressWrap');
-    const progressBar  = document.getElementById('progressBar');
-    const progressText = document.getElementById('progressText');
-    const logBox       = document.getElementById('logBox');
-
     progressWrap.style.display = 'block';
     progressText.style.display = 'block';
     logBox.style.display = 'block';
     logBox.innerHTML = '';
 
     try {
-        // Pega o maior número atual para continuar a sequência
         const snapshot = await db.collection('transacoes').get();
         let numero = snapshot.empty ? 1 : Math.max(...snapshot.docs.map(d => d.data().numero || 0)) + 1;
 
-        const total = DADOS_2025.length;
-        let importados = 0;
-
-        // Firestore batch (até 500 operações por lote)
         const lote = db.batch();
 
-        DADOS_2025.forEach(d => {
+        dados.forEach(d => {
             const ref = db.collection('transacoes').doc();
             lote.set(ref, {
                 numero:    numero++,
-                descricao: 'Lançamento 2025',
+                descricao: `Lançamento ${ano}`,
                 tipo:      d.tipo,
                 mes:       d.mes,
-                ano:       2025,
+                ano:       ano,
                 valor:     d.valor,
                 criado:    firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -212,16 +238,14 @@ async function iniciarImportacao() {
         await lote.commit();
 
         progressBar.style.width = '100%';
-        progressText.textContent = `✅ ${total} registros importados com sucesso!`;
-        logBox.innerHTML = `<span style="color:#27AE60">✅ Importação concluída! ${total} lançamentos de 2025 foram adicionados ao banco de dados.</span>`;
+        progressText.textContent = `✅ ${dados.length} registros importados!`;
+        logBox.innerHTML = `<span style="color:#27AE60">✅ Concluído! ${dados.length} lançamentos de ${ano} adicionados.</span>`;
 
         btn.innerHTML = '<i class="fas fa-check"></i> Importação Concluída!';
         btn.style.background = 'linear-gradient(135deg, #2ECC71, #27AE60)';
         btn.style.color = '#fff';
 
-        setTimeout(() => {
-            window.location.href = 'index.html';
-        }, 2500);
+        setTimeout(() => { window.location.href = 'index.html'; }, 2500);
 
     } catch (erro) {
         console.error(erro);

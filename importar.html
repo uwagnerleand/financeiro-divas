@@ -18,6 +18,7 @@
         .import-info p { font-size: 0.88rem; color: #5D4037; margin: 4px 0; }
         .import-info strong { color: #2C3E50; }
         .progress-bar-wrap { background: #ECF0F1; border-radius: 20px; height: 14px; margin: 16px 0 8px; overflow: hidden; display: none; }
+        [id^="progressWrap"] { display: none; }
         .progress-bar { height: 100%; background: linear-gradient(135deg, #FFB800, #27AE60); border-radius: 20px; width: 0%; transition: width 0.3s ease; }
         #progressText { font-size: 0.85rem; color: #7F8C8D; text-align: center; margin-bottom: 16px; display: none; }
         #logBox { background: #F8F9FA; border: 1px solid #ECF0F1; border-radius: 8px; padding: 14px; max-height: 200px; overflow-y: auto; font-size: 0.8rem; font-family: monospace; color: #2C3E50; display: none; margin-top: 16px; }
@@ -53,44 +54,57 @@
             <i class="fas fa-arrow-left"></i> Voltar para Transações
         </a>
 
-        <div class="import-card">
+        <!-- CARD 2025 -->
+        <div class="import-card" style="margin-bottom:24px">
             <div class="import-card-header">
                 <h2><i class="fas fa-upload" style="margin-right:8px"></i>Importar Lançamentos 2025</h2>
                 <p>Carrega automaticamente todos os lançamentos históricos do ano 2025</p>
             </div>
             <div class="import-card-body">
-
                 <div class="summary-grid">
-                    <div class="summary-mini">
-                        <span>Total de registros</span>
-                        <strong>146</strong>
-                    </div>
-                    <div class="summary-mini">
-                        <span>Entradas</span>
-                        <strong style="color:#27AE60">117</strong>
-                    </div>
-                    <div class="summary-mini">
-                        <span>Saídas</span>
-                        <strong style="color:#E74C3C">29</strong>
-                    </div>
+                    <div class="summary-mini"><span>Total</span><strong>146</strong></div>
+                    <div class="summary-mini"><span>Entradas</span><strong style="color:#27AE60">117</strong></div>
+                    <div class="summary-mini"><span>Saídas</span><strong style="color:#E74C3C">29</strong></div>
                 </div>
-
                 <div class="import-info">
-                    <p><strong>⚠️ Atenção:</strong> Clique no botão apenas uma vez.</p>
-                    <p>Se os dados já foram importados antes, clique em "Verificar" primeiro para não duplicar.</p>
-                    <p>A descrição será preenchida automaticamente como "Lançamento 2025" — você pode editar depois.</p>
+                    <p><strong>⚠️ Atenção:</strong> Clique no botão apenas uma vez para não duplicar.</p>
+                    <p>A descrição será "Lançamento 2025" — pode editar depois.</p>
                 </div>
-
-                <div class="progress-bar-wrap" id="progressWrap">
-                    <div class="progress-bar" id="progressBar"></div>
+                <div class="progress-bar-wrap" id="progressWrap2025">
+                    <div class="progress-bar" id="progressBar2025"></div>
                 </div>
-                <p id="progressText">Importando...</p>
-
-                <button class="btn btn-primary btn-import-big" id="btnImportar" onclick="iniciarImportacao()">
+                <p id="progressText2025" style="display:none;font-size:.85rem;color:#7F8C8D;text-align:center;margin-bottom:12px"></p>
+                <button class="btn btn-primary btn-import-big" id="btnImportar2025" onclick="iniciarImportacao(2025)">
                     <i class="fas fa-upload"></i> Importar 146 Lançamentos de 2025
                 </button>
+                <div id="logBox2025"></div>
+            </div>
+        </div>
 
-                <div id="logBox"></div>
+        <!-- CARD 2026 -->
+        <div class="import-card">
+            <div class="import-card-header" style="background:linear-gradient(135deg,#5DADE2,#2980B9)">
+                <h2><i class="fas fa-upload" style="margin-right:8px"></i>Importar Lançamentos 2026</h2>
+                <p>Carrega os lançamentos do ano 2026 (Janeiro, Março e Abril)</p>
+            </div>
+            <div class="import-card-body">
+                <div class="summary-grid">
+                    <div class="summary-mini"><span>Total</span><strong>18</strong></div>
+                    <div class="summary-mini"><span>Entradas</span><strong style="color:#27AE60">13</strong></div>
+                    <div class="summary-mini"><span>Saídas</span><strong style="color:#E74C3C">5</strong></div>
+                </div>
+                <div class="import-info">
+                    <p><strong>⚠️ Atenção:</strong> Clique no botão apenas uma vez para não duplicar.</p>
+                    <p>A descrição será "Lançamento 2026" — pode editar depois.</p>
+                </div>
+                <div class="progress-bar-wrap" id="progressWrap2026">
+                    <div class="progress-bar" id="progressBar2026"></div>
+                </div>
+                <p id="progressText2026" style="display:none;font-size:.85rem;color:#7F8C8D;text-align:center;margin-bottom:12px"></p>
+                <button class="btn btn-primary btn-import-big" id="btnImportar2026" onclick="iniciarImportacao(2026)" style="background:linear-gradient(135deg,#5DADE2,#2980B9)">
+                    <i class="fas fa-upload"></i> Importar 18 Lançamentos de 2026
+                </button>
+                <div id="logBox2026"></div>
             </div>
         </div>
     </div>
