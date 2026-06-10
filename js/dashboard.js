@@ -83,7 +83,7 @@ function renderizarDashboard() {
     // Gráficos
     renderizarBarras(comDados);
     renderizarRosca(totais);
-    renderizarLinha(comDados);
+    renderizarLinha(porMes);
     renderizarTabela(porMes);
 }
 
@@ -183,74 +183,81 @@ function renderizarRosca(totais) {
 }
 
 // ============================================================
-// GRÁFICO 3 — LINHA (Análise Temporal)
+// GRÁFICO 3 — LINHA (Rendimento por Mês com labels nos pontos)
 // ============================================================
 
-function renderizarLinha(comDados) {
+function formatLabel(v) {
+    if (v === 0) return '0';
+    return v % 1 === 0
+        ? v.toLocaleString('pt-BR')
+        : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function renderizarLinha(porMes) {
     if (instanciaLine) { instanciaLine.destroy(); instanciaLine = null; }
 
     const ctx = document.getElementById('lineChart').getContext('2d');
 
-    if (comDados.length === 0) {
-        instanciaLine = new Chart(ctx, {
-            type: 'line',
-            data: { labels: ['Sem dados'], datasets: [] },
-            options: { responsive: true, maintainAspectRatio: false }
-        });
-        return;
-    }
-
-    // Calcula saldo acumulado mês a mês
-    let acumulado = 0;
-    const saldoAcumulado = comDados.map(m => {
-        acumulado += m.saldo;
-        return acumulado;
-    });
+    // Sempre mostra todos os 12 meses
+    const entradas = porMes.map(m => m.entradas);
+    const saidas   = porMes.map(m => m.saidas);
 
     instanciaLine = new Chart(ctx, {
         type: 'line',
+        plugins: [ChartDataLabels],
         data: {
-            labels: comDados.map(d => d.abrev),
+            labels: MESES_ABREV,
             datasets: [
                 {
                     label: 'Entradas',
-                    data: comDados.map(d => d.entradas),
-                    borderColor: '#2ECC71',
-                    backgroundColor: 'rgba(46,204,113,0.08)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#2ECC71',
-                    pointRadius: 5,
-                    tension: 0.4,
-                    fill: false
+                    data: entradas,
+                    borderColor: '#5B9BD5',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#5B9BD5',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    tension: 0.2,
+                    fill: false,
+                    datalabels: {
+                        color: '#2471A3',
+                        anchor: 'top',
+                        align: 'top',
+                        offset: 4,
+                        font: { size: 10, weight: '700', family: 'Poppins' },
+                        formatter: formatLabel
+                    }
                 },
                 {
                     label: 'Saídas',
-                    data: comDados.map(d => d.saidas),
-                    borderColor: '#E74C3C',
-                    backgroundColor: 'rgba(231,76,60,0.08)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#E74C3C',
-                    pointRadius: 5,
-                    tension: 0.4,
-                    fill: false
-                },
-                {
-                    label: 'Saldo Acumulado',
-                    data: saldoAcumulado,
-                    borderColor: '#3498DB',
-                    backgroundColor: 'rgba(52,152,219,0.12)',
-                    borderWidth: 3,
-                    pointBackgroundColor: '#3498DB',
+                    data: saidas,
+                    borderColor: '#C0392B',
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: '#C0392B',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
                     pointRadius: 6,
-                    tension: 0.4,
-                    fill: true,
-                    borderDash: []
+                    pointHoverRadius: 8,
+                    tension: 0.2,
+                    fill: false,
+                    datalabels: {
+                        color: '#C0392B',
+                        anchor: 'end',
+                        align: 'bottom',
+                        offset: 4,
+                        font: { size: 10, weight: '700', family: 'Poppins' },
+                        formatter: formatLabel
+                    }
                 }
             ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            layout: { padding: { top: 28, bottom: 18 } },
             interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: {
@@ -261,14 +268,22 @@ function renderizarLinha(comDados) {
                     callbacks: {
                         label: ctx => ` ${ctx.dataset.label}: ${formatBRL(ctx.raw)}`
                     }
-                }
+                },
+                datalabels: { display: true }
             },
             scales: {
                 y: {
-                    ticks: { callback: v => 'R$ ' + v.toLocaleString('pt-BR'), font: { family: 'Poppins', size: 10 } },
+                    beginAtZero: true,
+                    ticks: {
+                        callback: v => 'R$ ' + v.toLocaleString('pt-BR'),
+                        font: { family: 'Poppins', size: 10 }
+                    },
                     grid: { color: 'rgba(0,0,0,0.05)' }
                 },
-                x: { ticks: { font: { family: 'Poppins', size: 11 } }, grid: { display: false } }
+                x: {
+                    ticks: { font: { family: 'Poppins', size: 10 } },
+                    grid: { display: false }
+                }
             }
         }
     });
