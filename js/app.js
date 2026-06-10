@@ -192,6 +192,8 @@ function openModal() {
     editandoId = null;
     document.getElementById('modalTitle').textContent = 'Nova Transação';
     document.getElementById('transactionForm').reset();
+    document.getElementById('descricaoLabel').textContent = 'Descrição *';
+    document.getElementById('descricao').placeholder = 'Ex: Venda de composto, Compra de materiais...';
     document.getElementById('saveBtn').innerHTML = '<i class="fas fa-save"></i> Salvar';
     document.getElementById('modalOverlay').classList.add('active');
     setTimeout(() => document.getElementById('descricao').focus(), 100);
@@ -238,14 +240,22 @@ function closeDeleteModal() {
 async function saveTransaction(e) {
     e.preventDefault();
     const dados = {
-        descricao: document.getElementById('descricao').value,
+        descricao: document.getElementById('descricao').value.trim(),
         tipo:      document.getElementById('tipo').value,
         mes:       document.getElementById('mes').value,
         ano:       document.getElementById('ano').value,
         valor:     document.getElementById('valor').value
     };
-    if (!dados.descricao || !dados.tipo || !dados.mes || !dados.ano || !dados.valor || parseFloat(dados.valor) <= 0) {
+    if (!dados.tipo || !dados.mes || !dados.ano || !dados.valor || parseFloat(dados.valor) <= 0) {
         mostrarToast('Preencha todos os campos corretamente.', 'error');
+        return;
+    }
+    if (!dados.descricao) {
+        const msg = dados.tipo === 'SAÍDA'
+            ? 'Informe com o que foi gasto o dinheiro.'
+            : 'Informe a descrição da transação.';
+        mostrarToast(msg, 'error');
+        document.getElementById('descricao').focus();
         return;
     }
     const btn = document.getElementById('saveBtn');
@@ -295,6 +305,18 @@ document.getElementById('searchInput').addEventListener('input',  e => { filtros
 document.getElementById('mesFilter').addEventListener('change',   e => { filtros.mes   = e.target.value; renderizar(); });
 document.getElementById('tipoFilter').addEventListener('change',  e => { filtros.tipo  = e.target.value; renderizar(); });
 document.getElementById('anoFilter').addEventListener('change',   e => { filtros.ano   = e.target.value; renderizar(); });
+
+document.getElementById('tipo').addEventListener('change', e => {
+    const label = document.getElementById('descricaoLabel');
+    const input = document.getElementById('descricao');
+    if (e.target.value === 'SAÍDA') {
+        label.textContent = 'Com o que foi gasto o dinheiro? *';
+        input.placeholder = 'Ex: Compra de saco de ráfia, Transporte, Material de limpeza...';
+    } else {
+        label.textContent = 'Descrição *';
+        input.placeholder = 'Ex: Venda de composto, Doação recebida...';
+    }
+});
 
 // ============================================================
 // EXPORTAR CSV
